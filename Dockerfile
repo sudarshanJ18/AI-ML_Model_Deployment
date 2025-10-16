@@ -9,9 +9,6 @@ RUN apt-get update && apt-get install -y \
     libsm6 \
     libxext6 \
     libxrender-dev \
-    # Add X11 dependencies for GUI applications
-    libx11-6 \
-    libxext6 \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements and install dependencies
@@ -19,21 +16,24 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy application files
-COPY collect_faces.py .
-COPY train_model.py .
-COPY utils.py .
-# Copy the GUI application (looks like it might be named differently than gui.py)
 COPY *.py .
 
 # Create necessary directories
-RUN mkdir -p models dataset
+RUN mkdir -p models dataset uploads
 
-# Set environment variable for display
-ENV DISPLAY=:0
+# Copy models if they exist
+COPY models/ models/
 
-# Set the entry point to the GUI application
-# Based on your paste, it seems the main GUI file might not be named recognize.py
-CMD ["python", "recognize_faces.py"]
+# Set environment variables
+ENV PYTHONUNBUFFERED=1
 
-# Expose port if you have an API component 
-EXPOSE 10000
+# Expose port for the API
+EXPOSE 8000
+
+# Create a non-root user for security
+RUN useradd -m appuser
+RUN chown -R appuser:appuser /app
+USER appuser
+
+# Set the entry point to the FastAPI application
+CMD ["python", "-m", "uvicorn", "recognize:app", "--host", "0.0.0.0", "--port", "8000"]

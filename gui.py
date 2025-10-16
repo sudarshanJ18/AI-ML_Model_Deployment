@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import filedialog, Label, Button, Frame
+from tkinter import filedialog, Label, Button, Frame, ttk, messagebox
 import cv2
 import numpy as np
 from PIL import Image, ImageTk
@@ -10,47 +10,124 @@ from utils import get_embedding, detect_faces, extract_face
 class FaceRecognitionApp:
     def __init__(self, root):
         self.root = root
-        root.title("Face Recognition Demo")
-        root.geometry("600x550")
-        root.configure(padx=20, pady=20)
+        root.title("Face Recognition System")
+        root.geometry("800x700")
+        root.configure(bg="#f5f5f5")
+        
+        # Set application icon if available
+        try:
+            root.iconbitmap("app_icon.ico")
+        except:
+            pass
+        
+        # Configure style
+        self.style = ttk.Style()
+        self.style.configure("TFrame", background="#f5f5f5")
+        self.style.configure("TButton", font=("Segoe UI", 11))
+        self.style.configure("TLabel", background="#f5f5f5", font=("Segoe UI", 11))
+        self.style.configure("Header.TLabel", font=("Segoe UI", 20, "bold"))
+        self.style.configure("Status.TLabel", font=("Segoe UI", 10))
         
         # Try to load models
         self.load_models()
         
-        # Main frame
-        main_frame = Frame(root)
-        main_frame.pack(fill=tk.BOTH, expand=True)
+        # Main container
+        main_container = ttk.Frame(root, padding=20, style="TFrame")
+        main_container.pack(fill=tk.BOTH, expand=True)
         
-        # Title
-        title_label = Label(main_frame, text="Face Recognition Demo", font=("Arial", 16, "bold"))
-        title_label.pack(pady=10)
+        # Header with logo and title
+        header_frame = ttk.Frame(main_container, style="TFrame")
+        header_frame.pack(fill=tk.X, pady=(0, 20))
         
-        # Status label to show model loading status
-        self.status_label = Label(main_frame, text="", font=("Arial", 10), fg="gray")
-        self.status_label.pack(pady=5)
+        # App title
+        title_label = ttk.Label(header_frame, text="Face Recognition System", style="Header.TLabel")
+        title_label.pack(side=tk.LEFT, pady=10)
+        
+        # Status indicator
+        status_frame = ttk.Frame(main_container, style="TFrame")
+        status_frame.pack(fill=tk.X, pady=(0, 10))
+        
+        status_label = ttk.Label(status_frame, text="System Status:", style="TLabel")
+        status_label.pack(side=tk.LEFT, padx=(0, 10))
+        
+        self.status_label = ttk.Label(status_frame, text="", style="Status.TLabel")
+        self.status_label.pack(side=tk.LEFT)
         self.update_status()
         
-        # Buttons frame
-        button_frame = Frame(main_frame)
-        button_frame.pack(pady=10)
+        # Control panel
+        control_frame = ttk.Frame(main_container, style="TFrame")
+        control_frame.pack(fill=tk.X, pady=10)
         
-        # Upload button
-        self.upload_btn = Button(button_frame, text="Upload & Recognize", command=self.upload_and_recognize, 
-                                 bg="#4CAF50", fg="white", font=("Arial", 12), padx=10, pady=5)
-        self.upload_btn.pack(side=tk.LEFT, padx=5)
+        # Main buttons
+        self.upload_btn = ttk.Button(
+            control_frame, 
+            text="Upload Image", 
+            command=self.upload_and_recognize,
+            style="TButton"
+        )
+        self.upload_btn.pack(side=tk.LEFT, padx=(0, 10))
         
-        # Webcam button
-        self.webcam_btn = Button(button_frame, text="Webcam Recognition", command=self.start_webcam, 
-                                 bg="#2196F3", fg="white", font=("Arial", 12), padx=10, pady=5)
-        self.webcam_btn.pack(side=tk.LEFT, padx=5)
+        self.webcam_btn = ttk.Button(
+            control_frame, 
+            text="Start Webcam", 
+            command=self.start_webcam,
+            style="TButton"
+        )
+        self.webcam_btn.pack(side=tk.LEFT, padx=(0, 10))
         
-        # Image display label
-        self.img_label = Label(main_frame, bg="#f0f0f0", width=500, height=300)
-        self.img_label.pack(pady=10)
+        # Additional buttons
+        self.collect_btn = ttk.Button(
+            control_frame, 
+            text="Collect Faces", 
+            command=self.collect_faces,
+            style="TButton"
+        )
+        self.collect_btn.pack(side=tk.LEFT, padx=(0, 10))
         
-        # Result label
-        self.result_label = Label(main_frame, text="Upload an image or start webcam", font=("Arial", 14))
-        self.result_label.pack(pady=10)
+        self.train_btn = ttk.Button(
+            control_frame, 
+            text="Train Model", 
+            command=self.train_model,
+            style="TButton"
+        )
+        self.train_btn.pack(side=tk.LEFT)
+        
+        # Display frame
+        display_frame = ttk.Frame(main_container, style="TFrame")
+        display_frame.pack(fill=tk.BOTH, expand=True, pady=10)
+        
+        # Image display with border
+        img_frame = ttk.Frame(display_frame, borderwidth=2, relief="groove")
+        img_frame.pack(padx=10, pady=10, fill=tk.BOTH, expand=True)
+        
+        self.img_label = Label(img_frame, bg="#e0e0e0")
+        self.img_label.pack(fill=tk.BOTH, expand=True, padx=2, pady=2)
+        
+        # Results section
+        results_frame = ttk.Frame(main_container, style="TFrame")
+        results_frame.pack(fill=tk.X, pady=10)
+        
+        results_header = ttk.Label(results_frame, text="Recognition Results:", style="TLabel")
+        results_header.pack(anchor=tk.W, pady=(0, 5))
+        
+        self.result_label = ttk.Label(
+            results_frame, 
+            text="Upload an image or start webcam to begin recognition",
+            style="TLabel"
+        )
+        self.result_label.pack(anchor=tk.W)
+        
+        # Footer
+        footer_frame = ttk.Frame(main_container, style="TFrame")
+        footer_frame.pack(fill=tk.X, pady=(20, 0))
+        
+        footer_text = ttk.Label(
+            footer_frame, 
+            text="© 2023 Face Recognition System - Enterprise Edition",
+            foreground="#888888",
+            style="Status.TLabel"
+        )
+        footer_text.pack(side=tk.RIGHT)
         
         # Webcam variables
         self.is_webcam_running = False
@@ -188,26 +265,27 @@ class FaceRecognitionApp:
         return cv2.resize(image, (new_width, new_height))
     
     def start_webcam(self):
-        """Start webcam-based face recognition"""
+        """Start or stop webcam-based face recognition"""
         if self.is_webcam_running:
+            self.stop_webcam()
             return
         
         try:
             # Initialize webcam
             self.cap = cv2.VideoCapture(0)
             if not self.cap.isOpened():
-                self.result_label.config(text="Error: Could not open webcam")
+                messagebox.showerror("Webcam Error", "Could not open webcam. Please check your camera connection.")
                 return
             
             self.is_webcam_running = True
-            self.webcam_btn.config(text="Stop Webcam", bg="#F44336")
-            self.result_label.config(text="Webcam running. Press 'Stop Webcam' to stop.")
+            self.webcam_btn.config(text="Stop Webcam")
+            self.result_label.config(text="Webcam active - Face recognition running")
             
             # Start webcam loop
             self.update_webcam_frame()
             
         except Exception as e:
-            self.result_label.config(text=f"Error: {str(e)}")
+            messagebox.showerror("Webcam Error", f"Error starting webcam: {str(e)}")
             self.stop_webcam()
     
     def update_webcam_frame(self):
@@ -284,8 +362,110 @@ class FaceRecognitionApp:
             if self.cap is not None:
                 self.cap.release()
                 self.cap = None
-            self.webcam_btn.config(text="Webcam Recognition", bg="#2196F3")
+            self.webcam_btn.config(text="Start Webcam")
             self.result_label.config(text="Webcam stopped")
+    
+    def collect_faces(self):
+        """Open the face collection interface"""
+        try:
+            # Stop webcam if running
+            self.stop_webcam()
+            
+            # Create a popup window for name input
+            name = self.show_name_input_dialog()
+            if not name:
+                return
+                
+            # Import the collect_faces module and run it
+            import subprocess
+            subprocess.Popen(["python", "collect_faces.py", name])
+            messagebox.showinfo("Face Collection", f"Started face collection for {name}. Please follow the instructions in the new window.")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to start face collection: {str(e)}")
+    
+    def train_model(self):
+        """Train the face recognition model"""
+        try:
+            # Stop webcam if running
+            self.stop_webcam()
+            
+            # Show a message that training has started
+            self.result_label.config(text="Training model... This may take a few minutes.")
+            self.root.update()
+            
+            # Import the train_model module and run it
+            import subprocess
+            process = subprocess.Popen(["python", "train_model.py"], 
+                                      stdout=subprocess.PIPE, 
+                                      stderr=subprocess.PIPE)
+            stdout, stderr = process.communicate()
+            
+            if process.returncode == 0:
+                messagebox.showinfo("Training Complete", "Model training completed successfully!")
+                # Reload the models
+                self.load_models()
+                self.update_status()
+            else:
+                error_msg = stderr.decode('utf-8')
+                messagebox.showerror("Training Error", f"Failed to train model: {error_msg}")
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to train model: {str(e)}")
+    
+    def show_name_input_dialog(self):
+        """Show a dialog to input person's name"""
+        dialog = tk.Toplevel(self.root)
+        dialog.title("Enter Name")
+        dialog.geometry("300x150")
+        dialog.resizable(False, False)
+        dialog.transient(self.root)
+        dialog.grab_set()
+        
+        # Center the dialog
+        dialog.geometry("+%d+%d" % (self.root.winfo_rootx() + 50,
+                                    self.root.winfo_rooty() + 50))
+        
+        # Add padding
+        frame = ttk.Frame(dialog, padding=20)
+        frame.pack(fill=tk.BOTH, expand=True)
+        
+        # Label
+        ttk.Label(frame, text="Enter the person's name:").pack(pady=(0, 10))
+        
+        # Entry
+        name_var = tk.StringVar()
+        entry = ttk.Entry(frame, textvariable=name_var, width=30)
+        entry.pack(pady=(0, 20))
+        entry.focus_set()
+        
+        # Result
+        result = [None]
+        
+        # Buttons
+        button_frame = ttk.Frame(frame)
+        button_frame.pack(fill=tk.X)
+        
+        def on_cancel():
+            result[0] = None
+            dialog.destroy()
+            
+        def on_ok():
+            name = name_var.get().strip()
+            if name:
+                result[0] = name
+                dialog.destroy()
+            else:
+                messagebox.showerror("Error", "Name cannot be empty")
+        
+        ttk.Button(button_frame, text="Cancel", command=on_cancel).pack(side=tk.LEFT, padx=(0, 10))
+        ttk.Button(button_frame, text="OK", command=on_ok).pack(side=tk.LEFT)
+        
+        # Handle Enter key
+        dialog.bind("<Return>", lambda event: on_ok())
+        dialog.bind("<Escape>", lambda event: on_cancel())
+        
+        # Wait for the dialog to close
+        self.root.wait_window(dialog)
+        return result[0]
 
 if __name__ == "__main__":
     root = tk.Tk()

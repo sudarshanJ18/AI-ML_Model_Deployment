@@ -1,0 +1,76 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: face-recognition-network-policy
+  namespace: face-recognition
+spec:
+  podSelector: {}
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: face-recognition
+    - podSelector:
+        matchLabels:
+          app: frontend
+    ports:
+    - protocol: TCP
+      port: 8000
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: face-recognition
+    - podSelector:
+        matchLabels:
+          app: backend
+    ports:
+    - protocol: TCP
+      port: 27017
+  egress:
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          name: face-recognition
+    ports:
+    - protocol: TCP
+      port: 8000
+    - protocol: TCP
+      port: 27017
+    - protocol: TCP
+      port: 80
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: face-recognition-sa
+  namespace: face-recognition
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  namespace: face-recognition
+  name: face-recognition-role
+rules:
+- apiGroups: [""]
+  resources: ["pods", "services", "configmaps", "secrets"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: ["apps"]
+  resources: ["deployments"]
+  verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: face-recognition-rolebinding
+  namespace: face-recognition
+subjects:
+- kind: ServiceAccount
+  name: face-recognition-sa
+  namespace: face-recognition
+roleRef:
+  kind: Role
+  name: face-recognition-role
+  apiGroup: rbac.authorization.k8s.io

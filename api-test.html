@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Face Recognition API Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        button { padding: 10px 20px; margin: 5px; cursor: pointer; }
+        pre { background: #f8f9fa; padding: 10px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Face Recognition API Connection Test</h1>
+    
+    <div class="test-section">
+        <h3>Backend Health Check</h3>
+        <button onclick="testHealth()">Test Health</button>
+        <div id="health-result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>Get Faces</h3>
+        <button onclick="testFaces()">Get Faces</button>
+        <div id="faces-result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>Get Logs</h3>
+        <button onclick="testLogs()">Get Logs</button>
+        <div id="logs-result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>Test Recognition</h3>
+        <input type="file" id="imageFile" accept="image/*">
+        <button onclick="testRecognition()">Test Recognition</button>
+        <div id="recognition-result"></div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8001';
+        
+        async function testHealth() {
+            const resultDiv = document.getElementById('health-result');
+            resultDiv.innerHTML = 'Testing...';
+            
+            try {
+                const response = await fetch(`${API_BASE}/health`, {
+                    headers: {
+                        'Origin': 'http://localhost:3000'
+                    }
+                });
+                const data = await response.json();
+                resultDiv.innerHTML = `<div class="success"><h4>✅ Health Check Success</h4><pre>${JSON.stringify(data, null, 2)}</pre></div>`;
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error"><h4>❌ Health Check Failed</h4><p>${error.message}</p></div>`;
+            }
+        }
+        
+        async function testFaces() {
+            const resultDiv = document.getElementById('faces-result');
+            resultDiv.innerHTML = 'Testing...';
+            
+            try {
+                const response = await fetch(`${API_BASE}/faces`, {
+                    headers: {
+                        'Origin': 'http://localhost:3000'
+                    }
+                });
+                const data = await response.json();
+                resultDiv.innerHTML = `<div class="success"><h4>✅ Get Faces Success</h4><p>Found ${data.length} faces</p><pre>${JSON.stringify(data, null, 2)}</pre></div>`;
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error"><h4>❌ Get Faces Failed</h4><p>${error.message}</p></div>`;
+            }
+        }
+        
+        async function testLogs() {
+            const resultDiv = document.getElementById('logs-result');
+            resultDiv.innerHTML = 'Testing...';
+            
+            try {
+                const response = await fetch(`${API_BASE}/logs`, {
+                    headers: {
+                        'Origin': 'http://localhost:3000'
+                    }
+                });
+                const data = await response.json();
+                resultDiv.innerHTML = `<div class="success"><h4>✅ Get Logs Success</h4><p>Found ${data.length} logs</p><pre>${JSON.stringify(data, null, 2)}</pre></div>`;
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error"><h4>❌ Get Logs Failed</h4><p>${error.message}</p></div>`;
+            }
+        }
+        
+        async function testRecognition() {
+            const resultDiv = document.getElementById('recognition-result');
+            const fileInput = document.getElementById('imageFile');
+            
+            if (!fileInput.files[0]) {
+                resultDiv.innerHTML = '<div class="error"><h4>❌ Please select an image file</h4></div>';
+                return;
+            }
+            
+            resultDiv.innerHTML = 'Testing recognition...';
+            
+            try {
+                const formData = new FormData();
+                formData.append('file', fileInput.files[0]);
+                formData.append('threshold', '0.6');
+                
+                const response = await fetch(`${API_BASE}/recognize`, {
+                    method: 'POST',
+                    headers: {
+                        'Origin': 'http://localhost:3000'
+                    },
+                    body: formData
+                });
+                
+                const data = await response.json();
+                resultDiv.innerHTML = `<div class="success"><h4>✅ Recognition Success</h4><pre>${JSON.stringify(data, null, 2)}</pre></div>`;
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error"><h4>❌ Recognition Failed</h4><p>${error.message}</p></div>`;
+            }
+        }
+        
+        // Auto-test on page load
+        window.onload = function() {
+            testHealth();
+        };
+    </script>
+</body>
+</html>
+
